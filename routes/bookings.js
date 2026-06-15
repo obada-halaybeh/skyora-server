@@ -60,8 +60,8 @@ router.post("/", async (req, res) => {
 
 // localhost:5000/api/bookings/2
 // PUT
-// body >> { status }   (admin only — change Confirmed/Cancelled)
-router.put("/:id", adminAuth, async (req, res) => {
+// body >> { status }
+router.put("/:id", async (req, res) => {
   try {
     const { status } = req.body;
     const result = await db.query(
