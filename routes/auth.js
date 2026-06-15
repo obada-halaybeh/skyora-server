@@ -2,7 +2,8 @@ import express from "express";
 import db from "../db.js";
 const router = express.Router();
 
-// POST /api/auth/signup  — body: { name, email, password }
+// POST /api/auth/signup
+// body: { name, email, password }
 router.post("/signup", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -23,7 +24,8 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-// POST /api/auth/login  — body: { email, password }
+// POST /api/auth/login
+// body: { email, password }
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
