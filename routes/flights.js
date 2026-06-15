@@ -51,12 +51,11 @@ router.post("/", adminAuth, async (req, res) => {
       direct,
       price,
       seats,
-      schedule,
       status,
     } = req.body;
     const result = await db.query(
-      `INSERT INTO flights (airline, flight_no, origin, destination, country, depart, arrive, duration, stops, direct, price, seats, schedule, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+      `INSERT INTO flights (airline, flight_no, origin, destination, country, depart, arrive, duration, stops, direct, price, seats, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
       [
         airline,
         flight_no,
@@ -70,7 +69,6 @@ router.post("/", adminAuth, async (req, res) => {
         direct,
         price,
         seats,
-        schedule,
         status,
       ],
     );
@@ -97,12 +95,11 @@ router.put("/:id", adminAuth, async (req, res) => {
       direct,
       price,
       seats,
-      schedule,
       status,
     } = req.body;
     const result = await db.query(
-      `UPDATE flights SET airline=$1, flight_no=$2, origin=$3, destination=$4, country=$5, depart=$6, arrive=$7, duration=$8, stops=$9, direct=$10, price=$11, seats=$12, schedule=$13, status=$14
-       WHERE id=$15 RETURNING *`,
+      `UPDATE flights SET airline=$1, flight_no=$2, origin=$3, destination=$4, country=$5, depart=$6, arrive=$7, duration=$8, stops=$9, direct=$10, price=$11, seats=$12, status=$13
+       WHERE id=$14 RETURNING *`,
       [
         airline,
         flight_no,
@@ -116,7 +113,6 @@ router.put("/:id", adminAuth, async (req, res) => {
         direct,
         price,
         seats,
-        schedule,
         status,
         req.params.id,
       ],

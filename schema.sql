@@ -30,7 +30,6 @@ CREATE TABLE IF NOT EXISTS flights (
   flight_date TEXT,         -- "May 15, 2026" (date is a reserved word, so flight_date)
   price INTEGER NOT NULL,
   seats INTEGER DEFAULT 0,
-  schedule TEXT,
   status TEXT DEFAULT 'Active'
 );
 
