@@ -11,6 +11,7 @@ import bundleRoutes from "./routes/bundles.js";
 import bookingRoutes from "./routes/bookings.js";
 import userRoutes from "./routes/users.js";
 import reviewRoutes from "./routes/reviews.js";
+import weatherRoutes from "./routes/weather.js";
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use("/api/bundles", bundleRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/weather", weatherRoutes);
 
 app.get("/", (req, res) => {
   res.send("Skyora API (PostgreSQL) is running");
