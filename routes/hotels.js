@@ -3,7 +3,9 @@ import db from "../db.js";
 import adminAuth from "../middleware/adminAuth.js";
 const router = express.Router();
 
-// GET all hotels
+// localhost:5000/api/hotels
+// GET
+// returns all hotels
 router.get("/", async (req, res) => {
   try {
     const result = await db.query("SELECT * FROM hotels ORDER BY id");
@@ -14,7 +16,9 @@ router.get("/", async (req, res) => {
   }
 });
 
-// GET one hotel + rooms + offers + gallery + reviews
+// localhost:5000/api/hotels/2
+// GET
+// returns one hotel + rooms + offers + gallery + reviews
 router.get("/:id", async (req, res) => {
   try {
     const id = req.params.id;
@@ -54,7 +58,9 @@ router.get("/:id", async (req, res) => {
 
 // localhost:5000/api/hotels
 // POST
+// header >> x-role: admin
 // body >> { name, location, country, stars, rating, review_count, rooms_count, price, img_seed, amenities, status, rooms, offers, gallerySeeds }
+// (rooms, offers, gallery are inserted into their child tables)
 router.post("/", adminAuth, async (req, res) => {
   try {
     const {
@@ -134,7 +140,8 @@ router.post("/", adminAuth, async (req, res) => {
 
 // localhost:5000/api/hotels/2
 // PUT
-// body >> same as POST (replaces children)
+// header >> x-role: admin
+// body >> same as POST (rebuilds children)
 router.put("/:id", adminAuth, async (req, res) => {
   try {
     const id = req.params.id;
@@ -216,7 +223,10 @@ router.put("/:id", adminAuth, async (req, res) => {
   }
 });
 
-// DELETE hotel (admin) — children auto-delete via ON DELETE CASCADE
+// localhost:5000/api/hotels/2
+// DELETE
+// header >> x-role: admin
+// (rooms, offers, gallery auto-delete via ON DELETE CASCADE)
 router.delete("/:id", adminAuth, async (req, res) => {
   try {
     const result = await db.query(

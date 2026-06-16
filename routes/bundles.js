@@ -3,51 +3,9 @@ import db from "../db.js";
 import adminAuth from "../middleware/adminAuth.js";
 const router = express.Router();
 
-// GET all bundles
-router.get("/", async (req, res) => {
-  try {
-    const result = await db.query("SELECT * FROM bundles ORDER BY id");
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
+// HELPER FUNCTIONS (auto-generate child data)
 
-// GET one bundle + timeline + breakdown + reviews
-router.get("/:id", async (req, res) => {
-  try {
-    const id = req.params.id;
-    const bundle = await db.query("SELECT * FROM bundles WHERE id = $1", [id]);
-    if (bundle.rows.length === 0)
-      return res.status(404).json({ message: "Bundle not found" });
-
-    const timeline = await db.query(
-      "SELECT * FROM bundle_timeline WHERE bundle_id = $1 ORDER BY step_order",
-      [id],
-    );
-    const breakdown = await db.query(
-      "SELECT * FROM bundle_breakdown WHERE bundle_id = $1 ORDER BY id",
-      [id],
-    );
-    const reviews = await db.query(
-      "SELECT * FROM reviews WHERE type = 'bundle' AND item_id = $1 ORDER BY id",
-      [id],
-    );
-
-    res.json({
-      ...bundle.rows[0],
-      timeline: timeline.rows,
-      breakdown: breakdown.rows,
-      reviews: reviews.rows,
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// Helper: build timeline from flight + hotel info
+// Build the itinerary timeline from the bundle's flight + hotel info
 function buildTimeline(b) {
   return [
     {
@@ -95,7 +53,7 @@ function buildTimeline(b) {
   ];
 }
 
-// Helper: build breakdown from prices
+// Build the price breakdown rows from the bundle's prices
 function buildBreakdown(b) {
   const flightCost = Math.round(b.price * 0.4);
   const hotelCost = Math.round(b.price * 0.7);
@@ -112,12 +70,66 @@ function buildBreakdown(b) {
   ];
 }
 
+// ROUTES
+
+// localhost:5000/api/bundles
+// GET
+// returns all bundles
+router.get("/", async (req, res) => {
+  try {
+    const result = await db.query("SELECT * FROM bundles ORDER BY id");
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// localhost:5000/api/bundles/2
+// GET
+// returns one bundle + its timeline + breakdown + reviews
+router.get("/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const bundle = await db.query("SELECT * FROM bundles WHERE id = $1", [id]);
+    if (bundle.rows.length === 0)
+      return res.status(404).json({ message: "Bundle not found" });
+
+    const timeline = await db.query(
+      "SELECT * FROM bundle_timeline WHERE bundle_id = $1 ORDER BY step_order",
+      [id],
+    );
+    const breakdown = await db.query(
+      "SELECT * FROM bundle_breakdown WHERE bundle_id = $1 ORDER BY id",
+      [id],
+    );
+    const reviews = await db.query(
+      "SELECT * FROM reviews WHERE type = 'bundle' AND item_id = $1 ORDER BY id",
+      [id],
+    );
+
+    res.json({
+      ...bundle.rows[0],
+      timeline: timeline.rows,
+      breakdown: breakdown.rows,
+      reviews: reviews.rows,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 // localhost:5000/api/bundles
 // POST
+// header >> x-role: admin
+// body >> { title, destination, travelers, airline, flight_no, flight_label, origin, dest_code, depart, arrive, duration, hotel_id, hotel_name, hotel_rating, hotel_reviews, room_type, nights, price, original, img_seed, status }
+// (timeline + breakdown are auto-generated)
 router.post("/", adminAuth, async (req, res) => {
   try {
     const b = req.body;
 
+    // 1. Insert the main bundle row
     const result = await db.query(
       `INSERT INTO bundles (title, destination, travelers, airline, flight_no, flight_label, origin, dest_code, depart, arrive, duration, hotel_id, hotel_name, hotel_rating, hotel_reviews, room_type, nights, price, original, img_seed, status)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21) RETURNING *`,
@@ -147,7 +159,7 @@ router.post("/", adminAuth, async (req, res) => {
     );
     const bundle = result.rows[0];
 
-    // Auto-generate timeline
+    // 2. Auto-generate + insert the timeline
     const timeline = buildTimeline(bundle);
     for (const t of timeline) {
       await db.query(
@@ -156,7 +168,7 @@ router.post("/", adminAuth, async (req, res) => {
       );
     }
 
-    // Auto-generate breakdown
+    // 3. Auto-generate + insert the breakdown
     const breakdown = buildBreakdown(bundle);
     for (const row of breakdown) {
       await db.query(
@@ -174,11 +186,15 @@ router.post("/", adminAuth, async (req, res) => {
 
 // localhost:5000/api/bundles/2
 // PUT
+// header >> x-role: admin
+// body >> same as POST
+// (timeline + breakdown are rebuilt)
 router.put("/:id", adminAuth, async (req, res) => {
   try {
     const id = req.params.id;
     const b = req.body;
 
+    // 1. Update the main bundle row
     const result = await db.query(
       `UPDATE bundles SET title=$1, destination=$2, travelers=$3, airline=$4, flight_no=$5, flight_label=$6, origin=$7, dest_code=$8, depart=$9, arrive=$10, duration=$11, hotel_id=$12, hotel_name=$13, hotel_rating=$14, hotel_reviews=$15, room_type=$16, nights=$17, price=$18, original=$19, img_seed=$20, status=$21
        WHERE id=$22 RETURNING *`,
@@ -212,7 +228,7 @@ router.put("/:id", adminAuth, async (req, res) => {
       return res.status(404).json({ message: "Bundle not found" });
     const bundle = result.rows[0];
 
-    // Rebuild children: delete old, regenerate
+    // 2. Rebuild children: delete the old timeline + breakdown, then regenerate
     await db.query("DELETE FROM bundle_timeline WHERE bundle_id = $1", [id]);
     await db.query("DELETE FROM bundle_breakdown WHERE bundle_id = $1", [id]);
 
@@ -239,7 +255,10 @@ router.put("/:id", adminAuth, async (req, res) => {
   }
 });
 
-// DELETE bundle (admin) — timeline/breakdown auto-delete via CASCADE
+// localhost:5000/api/bundles/2
+// DELETE
+// header >> x-role: admin
+// (timeline + breakdown auto-delete via ON DELETE CASCADE)
 router.delete("/:id", adminAuth, async (req, res) => {
   try {
     const result = await db.query(

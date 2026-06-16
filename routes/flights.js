@@ -3,7 +3,9 @@ import db from "../db.js";
 import adminAuth from "../middleware/adminAuth.js";
 const router = express.Router();
 
-// GET all flights
+// localhost:5000/api/flights
+// GET
+// returns all flights
 router.get("/", async (req, res) => {
   try {
     const result = await db.query("SELECT * FROM flights ORDER BY id");
@@ -14,7 +16,9 @@ router.get("/", async (req, res) => {
   }
 });
 
-// GET one flight + its reviews
+// localhost:5000/api/flights/2
+// GET
+// returns one flight + its reviews
 router.get("/:id", async (req, res) => {
   try {
     const flight = await db.query("SELECT * FROM flights WHERE id = $1", [
@@ -35,7 +39,10 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// CREATE flight (admin)
+// localhost:5000/api/flights
+// POST
+// header >> x-role: admin
+// body >> { airline, flight_no, origin, destination, country, depart, arrive, duration, stops, direct, price, seats, status }
 router.post("/", adminAuth, async (req, res) => {
   try {
     const {
@@ -79,7 +86,10 @@ router.post("/", adminAuth, async (req, res) => {
   }
 });
 
-// UPDATE flight (admin)
+// localhost:5000/api/flights/2
+// PUT
+// header >> x-role: admin
+// body >> { airline, flight_no, origin, destination, country, depart, arrive, duration, stops, direct, price, seats, status }
 router.put("/:id", adminAuth, async (req, res) => {
   try {
     const {
@@ -126,7 +136,9 @@ router.put("/:id", adminAuth, async (req, res) => {
   }
 });
 
-// DELETE flight (admin)
+// localhost:5000/api/flights/2
+// DELETE
+// header >> x-role: admin
 router.delete("/:id", adminAuth, async (req, res) => {
   try {
     const result = await db.query(
